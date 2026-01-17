@@ -40,7 +40,7 @@ def evaluate_performance(env, epsilon, q_net, n_states, device):
         actions.append(a)            
         # 执行动作获得反馈
         next_obs, reward, terminated, truncated, info = env.step(a)
-        # 判断是否中止或结束
+        # 判断是否抵达终点或超时中断
         done = terminated or truncated
         # 最新状态转换
         s_next = obs_to_state(next_obs, env.width)
@@ -52,7 +52,7 @@ def evaluate_performance(env, epsilon, q_net, n_states, device):
         x, y = next_obs
         positions.append((int(x), int(y)))
         
-    return eval_steps, positions, actions
+    return eval_steps, positions, actions, terminated
 
 
 def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
@@ -169,6 +169,9 @@ def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
                 # 按step将TD Error记录tensorBoard
                 td_error = torch.abs(q_sa - y).mean().item()
                 writer.add_scalar("Train/TD_Error", td_error, global_step)
+                writer.add_scalar("Train/Q_mean", q_sa.mean().item(), global_step)
+                writer.add_scalar("Train/Q_max", q_sa.max().item(), global_step)
+                writer.add_scalar("Train/Loss", loss.item(), global_step)
 
             # 状态推进
             s = s_next
@@ -185,9 +188,10 @@ def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
         # 将每轮ep随机率加入tensorBoard
         writer.add_scalar("Episode/Epsilon", epsilon, ep)
         # 评估学习效果，不学习不更新Q表
-        eval_steps, positions, actions = evaluate_performance(env, epsilon, q_net, n_states, device)
+        eval_steps, positions, actions, eval_terminated = evaluate_performance(env, epsilon, q_net, n_states, device)
         # 将每轮ep学习效果加入tensorBoard
         writer.add_scalar("Eval/Steps", eval_steps, ep)
+        writer.add_scalar("Eval/Success", eval_terminated, ep)
         # 满足条件触发动画制作
         if save_gif and ep >= save_gif_ep_start and ep % save_gif_ep == 0: 
             run_time = datetime.now().strftime("%Y%m%d%H%M%S")
