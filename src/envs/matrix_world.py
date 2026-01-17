@@ -18,7 +18,11 @@ class MatrixWorld(gym.Env):
         # 定义世界空间最大坐标
         self.max_x = self.width - 1
         self.max_y = self.height - 1
-        self.max_pos = [self.max_x, self.max_y]    
+        self.max_pos = [self.max_x, self.max_y]
+        # 定义世界起点
+        self.start_pos = self.min_pos    
+        # 定义世界终点
+        self.goal_pos = self.max_pos
         # 智能体在世界中的位置状态信息
         self.pos = self.min_pos
         # 动作空间：两个动作 0:up / 1:down / 2:left / 3:right
@@ -39,9 +43,16 @@ class MatrixWorld(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         # 一局开始：把智能体放回起点
-        self.pos = self.min_pos.copy()
-        # 将初始化位置转换到观测空间
-        obs = np.array(self.pos, dtype=np.int64)
+        self.pos = self.start_pos.copy()
+        # 随机设定终点位置
+        while True:
+            gx = self.np_random.integers(self.min_x, self.max_x + 1)
+            gy = self.np_random.integers(self.min_y, self.max_y + 1)
+            if [gx, gy] != self.pos:
+                break
+        self.goal_pos = [int(gx), int(gy)]
+        # 将初始化位置与终点位置转换到观测空间
+        obs = np.concatenate([self.pos, self.goal_pos]).astype(np.int64)
         # 初始化训练步数累计值
         self.steps = 0
         # 额外信息反馈出口，非Agent相关学习信息，可用于调试
@@ -87,7 +98,7 @@ class MatrixWorld(gym.Env):
             if hit_wall and self.rrwds.hit_wall_enable:
                 reward += self.rrwds.hit_wall_reward
         # 将位置信息转换到观测空间
-        obs = np.array(self.pos, dtype=np.int64)
+        obs = np.concatenate([self.pos, self.goal_pos]).astype(np.int64)
         # 当步数远超预期时，中断训练
         self.steps += 1 
         if self.steps >= self.max_step:

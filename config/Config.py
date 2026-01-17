@@ -16,8 +16,8 @@ CONFIG = {
 
     },
     "environment":{
-        "width":10,       # 2D空间宽度 
-        "height":10,      # 2D空间高度
+        "width":15,       # 2D空间宽度 
+        "height":15,      # 2D空间高度
         "min_steps":1,   # 最大步数
         "max_steps":1000 # 最大步数
     },
@@ -26,12 +26,12 @@ CONFIG = {
         "ani_dir":"anis"
     },
     "animation":{
-        "save_gif":False,         # 是否保存动画
-        "save_git_ep_start":90, # 保存动画起始轮次
-        "save_gif_ep":10,       # 保存动画轮次间隔 
-        "agent_img_dir":"D:\\Workspace\\reinforce\\imgs\\G.gif",  # Agent图片地址
-        "des_img_dir":"D:\\Workspace\\reinforce\\imgs\\T.gif",    # 终点图片地址    
-        "end_img_path":"D:\\Workspace\\reinforce\\imgs\\Ending.gif", # 胜利画面地址   
+        "save_gif":True,         # 是否保存动画
+        "save_git_ep_start":200, # 保存动画起始轮次
+        "save_gif_ep":90,       # 保存动画轮次间隔 
+        "agent_img_dir":"imgs\\G.gif",  # Agent图片地址
+        "des_img_dir":"imgs\\T.gif",    # 终点图片地址    
+        "end_img_path":"imgs\\Ending.gif", # 胜利画面地址   
         "ending_time":10  # 胜利画面持续时长  
 
     },
