@@ -1,12 +1,13 @@
 CONFIG = {
     "training":{
-        "episodes":300  # 训练轮数 
+        "episodes":1000  # 训练轮数 
     },
     "algorithm":{
         "alpha" : 0.1,  # 学习率
         "gamma" : 0.99,  # 未来折扣因子
-        "batch_size": 32, # 样本批次数量 - DQN采样用   
-        "lr": 1e-3           # 神经网络学习率 - DQN
+        "batch_size": 32,                   # 样本批次数量 - DQN采样用   
+        "lr": 1e-3,                         # 神经网络学习率 - DQN
+        "target_update_freq": 100           # 目标网络参数更新频率 - DQN
     },
     "exploration":{
         "epsilon_start":0.3,    # 初始随机率

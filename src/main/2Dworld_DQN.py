@@ -1,5 +1,6 @@
 import torch
 import torch.optim as optim
+from copy import deepcopy
 from config.Config import CONFIG
 from src.uti.utilities import get_path_variables
 from src.data.run_context import RunContext
@@ -23,13 +24,18 @@ if __name__ == "__main__":
     # 初始化环境对象
     env = MatrixWorld()
     # 初始化神经网络对象
-    q_net = QNet(env.width * env.height, env.action_space.n)
+    q_net = QNet(env.width * env.height, env.action_space.n).to(device)
+    # 创建target_net，结构和参数保持与q_net一致
+    target_net = deepcopy(q_net).to(device)
+    target_net.load_state_dict(q_net.state_dict())
+    # 目标网络切换到评估模式
+    target_net.eval()
     # 初始化样本重放对象
     replay_buffer = ReplayBuffer()
     # 初始化优化器对象
     optimizer = optim.Adam(q_net.parameters(), lr=CONFIG["algorithm"]["lr"])
 
     # 开始强化学习训练
-    train_dqn(env, rctx, q_net, replay_buffer, optimizer, device)
+    train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device)
 
     print("done")

@@ -60,7 +60,7 @@ def evaluate_performance(env, q_net, n_states, device):
     return eval_steps, positions, actions
 
 
-def train_dqn(env, rctx, q_net, replay_buffer, optimizer, device):
+def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
 
     # 计算状态空间
     n_states = env.width * env.height
@@ -74,6 +74,8 @@ def train_dqn(env, rctx, q_net, replay_buffer, optimizer, device):
     gamma = CONFIG["algorithm"]["gamma"]
     # 初始化DQN学习率
     batch_size = CONFIG["algorithm"]["batch_size"]
+    # 初始化DQN目标网络更新频率
+    target_update_freq = CONFIG["algorithm"]["target_update_freq"]
     # 初始化随机因子相关参数
     epsilon = CONFIG["exploration"]["epsilon_start"]    
     epsilon_decay = CONFIG["exploration"]["epsilon_decay"]
@@ -110,7 +112,8 @@ def train_dqn(env, rctx, q_net, replay_buffer, optimizer, device):
         # 每轮训练初始化观测环境
         print("The episode >>>>>>>>> ", ep)
         obs, info, s, done, step_count = train_episode_initilize(env)
-
+        # 定义网络学习计数器
+        q_net_learn_count = 0
         # 开始执行直到抵达终点或任务中断
         while not done:
             # 选择一个动作
@@ -150,8 +153,8 @@ def train_dqn(env, rctx, q_net, replay_buffer, optimizer, device):
                 q_sa = q_net(S).gather(1, A).squeeze(1)
                 # 用下一时刻作为输入，神经网络正向推理得到所有得分，从分数中取得得分最大的动作
                 with torch.no_grad():
-                    q_next_max = q_net(S2).max(dim=1).values
-                    y = R + gamma * (1.0 - D) * q_next_max
+                    target_next_max = target_net(S2).max(dim=1).values
+                    y = R + gamma * (1.0 - D) * target_next_max
                 # 通过当前时刻动作得分与下一时刻动作得分计算loss，逼近
                 loss = F.smooth_l1_loss(q_sa, y)
                 # 清空梯度
@@ -160,6 +163,12 @@ def train_dqn(env, rctx, q_net, replay_buffer, optimizer, device):
                 loss.backward()
                 # 优化参数
                 optimizer.step()
+                # 更新计数器
+                q_net_learn_count += 1
+                # 目标网络参数更新
+                if q_net_learn_count > target_update_freq:
+                    target_net.load_state_dict(q_net.state_dict())
+                    q_net_learn_count = 0
 
             # 状态推进
             s = s_next
