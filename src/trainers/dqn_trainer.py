@@ -107,6 +107,8 @@ def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
         hit_wall_reward = hit_wall_reward
     )
     env.set_rewards(rrwds)
+    # 全局步数计数器-不重置
+    global_step = 0
     # 进入训练，训练次数=episodes
     for ep in range(episodes):
         # 每轮训练初始化观测环境
@@ -169,10 +171,14 @@ def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
                 if q_net_learn_count > target_update_freq:
                     target_net.load_state_dict(q_net.state_dict())
                     q_net_learn_count = 0
+                # 按step将TD Error记录tensorBoard
+                td_error = torch.abs(q_sa - y).mean().item()
+                writer.add_scalar("Train/TD_Error", td_error, global_step)
 
             # 状态推进
             s = s_next
             # 步数累计
+            global_step += 1
             step_count += 1
             if (done): print("This episode is completed.")
 

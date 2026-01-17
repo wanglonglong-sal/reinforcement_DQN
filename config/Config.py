@@ -1,6 +1,6 @@
 CONFIG = {
     "training":{
-        "episodes":1000  # 训练轮数 
+        "episodes":500  # 训练轮数 
     },
     "algorithm":{
         "alpha" : 0.1,  # 学习率
