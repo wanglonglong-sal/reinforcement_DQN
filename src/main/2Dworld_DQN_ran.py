@@ -1,4 +1,10 @@
 import torch
+print("torch version:", torch.__version__)
+print("cuda available:", torch.cuda.is_available())
+print("torch cuda version:", torch.version.cuda)
+print("device count:", torch.cuda.device_count())
+if torch.cuda.is_available():
+    print("gpu name:", torch.cuda.get_device_name(0))
 import torch.optim as optim
 from copy import deepcopy
 from config.Config import CONFIG

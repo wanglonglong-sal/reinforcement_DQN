@@ -10,14 +10,16 @@ from src.agents.policies import epsilon_greedy_dqn_ran
 from src.ani.animation_visualize import animate_position_2d_img_ran
 
 # 以obs转换模型输入数据
-def obs_to_net(obs, env, device):
+def obs_to_feature(obs, env):
     # 转换当前坐标，随机终点坐标
     x, y, gx, gy = obs
     # 计算相对距离并且进行归一化处理
     dx = (gx - x) / env.max_x
     dy = (gy - y) / env.max_y
     # 返回可输入模型的数据形式
-    return torch.tensor([dx, dy], dtype=torch.float32, device=device)
+
+    return np.array([dx, dy], dtype=np.float32)
+
 
 # 每轮训练状态初始化
 def train_episode_initilize(env):
@@ -41,8 +43,8 @@ def evaluate_performance(env, epsilon, q_net, n_states, device):
     actions = []
     while not done:
         # 根据神经网络正向推理得到贪婪动作
-        obs_tensor = obs_to_net(obs, env, device)
-        a = epsilon_greedy_dqn_ran(env, epsilon, q_net, obs_tensor, device) 
+        obs_np = obs_to_feature(obs, env)
+        a = epsilon_greedy_dqn_ran(env, epsilon, q_net, obs_np, device) 
         # 取得最优状态对应动作
         actions.append(a)            
         # 执行动作获得反馈
@@ -119,31 +121,27 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
         # 开始执行直到抵达终点或任务中断
         while not done:
             # 选择一个动作
-            # s_onehot = state_to_onehot(s, n_states)
-            obs_tensor = obs_to_net(obs, env, device)
-            a = epsilon_greedy_dqn_ran(env, epsilon, q_net, obs_tensor, device) 
+            obs_np = obs_to_feature(obs, env)
+            a = epsilon_greedy_dqn_ran(env, epsilon, q_net, obs_np, device) 
             # 执行后得到反馈
             next_obs, reward, terminated, truncated, info = env.step(a)
+            next_obs_np = obs_to_feature(next_obs, env)
             # 是否抵达终点或被打断
             done = terminated or truncated
             # 将本次样本记录到回放样本库
-            replay_buffer.add(obs, a, reward, next_obs, done)
+            replay_buffer.add(obs_np, a, reward, next_obs_np, done)
             # 当样本数量足够时，触发神经网络学习
             if len(replay_buffer) >= batch_size:
                 # 在回放样本库采样
                 batch = replay_buffer.sample(batch_size)
                 # 采样数据重构为 当前状态，状态对应动作，奖励，下一状态，完成状态
-                O, A, R, O2, D = zip(*batch)
+                Fea, A, R, Fea2, D = zip(*batch)
                 # 转换{当前观测信息}到神经网络可加载数据形式
-                O_np = np.array([obs_to_net(o, env, device) for o in O],
-                                 dtype=np.float32
-                                 )
-                O = torch.from_numpy(O_np).to(device)
-                # 转换{下一观测信息}到神经网络可加载数据形式
-                O2_np = np.array([obs_to_net(o2, env, device) for o2 in O2],
-                                 dtype=np.float32
-                                 )
-                O2 = torch.from_numpy(O2_np).to(device)                
+                Fea_np = np.stack(Fea, axis=0).astype(np.float32)
+                Fea = torch.from_numpy(Fea_np).to(device)
+                # 转换{下一观测信息}到神经网络可加载数据形式 
+                Fea2_np = np.stack(Fea2, axis=0).astype(np.float32)
+                Fea2 = torch.from_numpy(Fea2_np).to(device)                   
                 # 转换{动作}到神经网络可加载数据形式
                 A = torch.tensor(A, dtype=torch.int64, device=device).unsqueeze(1)                
                 # 转换{奖励}到神经网络可加载数据形式
@@ -151,10 +149,10 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
                 # 转换{是否完成}到神经网络可加载数据形式
                 D = torch.tensor(D, dtype=torch.float32, device=device)
                 # 以当前状态作为输入，神经网络正向推理得到所有分数，从分数中取得实际执行的动作得分
-                q_sa = q_net(O).gather(1, A).squeeze(1)
+                q_sa = q_net(Fea).gather(1, A).squeeze(1)
                 # 用下一时刻作为输入，神经网络正向推理得到所有得分，从分数中取得得分最大的动作
                 with torch.no_grad():
-                    target_next_max = target_net(O2).max(dim=1).values
+                    target_next_max = target_net(Fea2).max(dim=1).values
                     y = R + gamma * (1.0 - D) * target_next_max
                 # 通过当前时刻动作得分与下一时刻动作得分计算loss，逼近
                 loss = F.smooth_l1_loss(q_sa, y)
@@ -170,12 +168,13 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
                 if q_net_learn_count > target_update_freq:
                     target_net.load_state_dict(q_net.state_dict())
                     q_net_learn_count = 0
+                if global_step % 20 == 0:
                 # 按step将TD Error记录tensorBoard
-                td_error = torch.abs(q_sa - y).mean().item()
-                writer.add_scalar("Train/TD_Error", td_error, global_step)
-                writer.add_scalar("Train/Q_mean", q_sa.mean().item(), global_step)
-                writer.add_scalar("Train/Q_max", q_sa.max().item(), global_step)
-                writer.add_scalar("Train/Loss", loss.item(), global_step)
+                    td_error = torch.abs(q_sa - y).mean().item()
+                    writer.add_scalar("Train/TD_Error", td_error, global_step)
+                    writer.add_scalar("Train/Q_mean", q_sa.mean().item(), global_step)
+                    writer.add_scalar("Train/Q_max", q_sa.max().item(), global_step)
+                    writer.add_scalar("Train/Loss", loss.item(), global_step)
 
             # 状态推进
             obs = next_obs
