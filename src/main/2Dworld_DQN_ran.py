@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # 初始化环境对象
     env = MatrixWorld()
     # 初始化神经网络对象
-    q_net = QNetRan(2, env.action_space.n).to(device)
+    q_net = QNetRan(6, env.action_space.n).to(device)
     # 创建target_net，结构和参数保持与q_net一致
     target_net = deepcopy(q_net).to(device)
     target_net.load_state_dict(q_net.state_dict())

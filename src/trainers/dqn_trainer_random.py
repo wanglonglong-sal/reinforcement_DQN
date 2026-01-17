@@ -18,7 +18,7 @@ def obs_to_feature(obs, env):
     dy = (gy - y) / env.max_y
     # 返回可输入模型的数据形式
 
-    return np.array([dx, dy], dtype=np.float32)
+    return np.array([x, y, gx, gy, dx, dy], dtype=np.float32)
 
 
 # 每轮训练状态初始化
@@ -70,6 +70,10 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
     n_actions = env.action_space.n
     # 初始化训练次数
     episodes = CONFIG["training"]["episodes"]
+    # 初始化训练数据记录频次
+    train_record_fre = CONFIG["training"]["train_record_fre"]
+    # 初始化表现评估频次
+    eval_performance_fre = CONFIG["training"]["eval_performance_fre"]
     # 初始化学习率 alpha
     alpha = CONFIG["algorithm"]["alpha"]
     # 初始化折扣因子 gamma，表示未来奖励这算在现在值多少
@@ -98,12 +102,12 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
     end_img_path = CONFIG["animation"]["end_img_path"]
     ending_time = CONFIG["animation"]["ending_time"]
     # 初始化rewards相关设定
-    max_pos_reward = CONFIG["rewards"]["max_pos_reward"]
+    goal_pos_reward = CONFIG["rewards"]["goal_pos_reward"]
     step_reward = CONFIG["rewards"]["step_reward"]
     hit_wall_enable = CONFIG["rewards"]["hit_wall_enable"]
     hit_wall_reward = CONFIG["rewards"]["hit_wall_reward"]
     rrwds = RunRewards(
-        max_pos_reward = max_pos_reward,
+        goal_pos_reward = goal_pos_reward,
         step_reward = step_reward,
         hit_wall_enable = hit_wall_enable,
         hit_wall_reward = hit_wall_reward
@@ -168,7 +172,7 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
                 if q_net_learn_count > target_update_freq:
                     target_net.load_state_dict(q_net.state_dict())
                     q_net_learn_count = 0
-                if global_step % 20 == 0:
+                if global_step % train_record_fre == 0:
                 # 按step将TD Error记录tensorBoard
                     td_error = torch.abs(q_sa - y).mean().item()
                     writer.add_scalar("Train/TD_Error", td_error, global_step)
@@ -190,11 +194,12 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
         writer.add_scalar("Episode/Steps", step_count, ep)
         # 将每轮ep随机率加入tensorBoard
         writer.add_scalar("Episode/Epsilon", epsilon, ep)
-        # 评估学习效果，不学习不更新Q表
-        eval_steps, positions, actions, eval_terminated = evaluate_performance(env, epsilon, q_net, n_states, device)
-        # 将每轮ep学习效果加入tensorBoard
-        writer.add_scalar("Eval/Steps", eval_steps, ep)
-        writer.add_scalar("Eval/Success", eval_terminated, ep)
+        if ep % eval_performance_fre == 0:
+            # 评估学习效果，不学习不更新Q表
+            eval_steps, positions, actions, eval_terminated = evaluate_performance(env, epsilon, q_net, n_states, device)
+            # 将每轮ep学习效果加入tensorBoard
+            writer.add_scalar("Eval/Steps", eval_steps, ep)
+            writer.add_scalar("Eval/Success", eval_terminated, ep)
         # 满足条件触发动画制作
         if save_gif and ep >= save_gif_ep_start and ep % save_gif_ep == 0: 
             run_time = datetime.now().strftime("%Y%m%d%H%M%S")

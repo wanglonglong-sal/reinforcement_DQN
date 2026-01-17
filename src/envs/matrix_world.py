@@ -88,8 +88,8 @@ class MatrixWorld(gym.Env):
         if x == old_x and y == old_y:
             hit_wall = True
         # 抵达终点时标记任务结束，最大化奖励
-        if self.pos == self.max_pos:
-            reward = self.rrwds.max_pos_reward
+        if self.pos == self.goal_pos:
+            reward = self.rrwds.goal_pos_reward
             terminated = True
         # 未抵达中间时标记任务继续，惩罚    
         else:

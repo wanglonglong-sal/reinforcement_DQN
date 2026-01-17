@@ -1,6 +1,8 @@
 CONFIG = {
     "training":{
-        "episodes":500  # 训练轮数 
+        "episodes":1000,             # 训练轮数 
+        "train_record_fre":500,      # 训练数据记录频次，基于全局步数
+        "eval_performance_fre": 10, # 表现评估频次，基于ep轮次
     },
     "algorithm":{
         "alpha" : 0.1,  # 学习率
@@ -16,10 +18,10 @@ CONFIG = {
 
     },
     "environment":{
-        "width":15,       # 2D空间宽度 
-        "height":15,      # 2D空间高度
+        "width":5,       # 2D空间宽度 
+        "height":5,      # 2D空间高度
         "min_steps":1,   # 最大步数
-        "max_steps":1000 # 最大步数
+        "max_steps":500 # 最大步数
     },
     "paths":{
         "log_dir":"runs",
@@ -27,8 +29,8 @@ CONFIG = {
     },
     "animation":{
         "save_gif":True,         # 是否保存动画
-        "save_git_ep_start":200, # 保存动画起始轮次
-        "save_gif_ep":90,       # 保存动画轮次间隔 
+        "save_git_ep_start":400, # 保存动画起始轮次
+        "save_gif_ep":45,       # 保存动画轮次间隔 
         "agent_img_dir":"imgs\\G.gif",  # Agent图片地址
         "des_img_dir":"imgs\\T.gif",    # 终点图片地址    
         "end_img_path":"imgs\\Ending.gif", # 胜利画面地址   
@@ -36,7 +38,7 @@ CONFIG = {
 
     },
     "rewards":{
-        "max_pos_reward":1,
+        "goal_pos_reward":1,
         "step_reward":-0.01,
         "hit_wall_enable":True,
         "hit_wall_reward":-0.5
