@@ -1,9 +1,9 @@
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-import matplotlib.image as mpimg
 from PIL import Image
-import numpy as np
+
 
 ACTION_NAME = {
     0:"UP",
