@@ -1,11 +1,10 @@
 import torch
-import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 from datetime import datetime
 from pathlib import Path
 from config.Config import CONFIG
-from src.envs.matrix_world import obs_to_state, state_to_onehot
+from src.envs.matrix_world import obs_to_state
 from src.data.run_context import RunRewards
 from src.agents.policies import epsilon_greedy_dqn
 from src.ani.animation_visualize import animate_position_2d_img
@@ -23,7 +22,7 @@ def train_episode_initilize(env):
 
     return obs, info, s, done, step_count    
 
-def evaluate_performance(env, epsilon, q_net, n_states, device):
+def evaluate_performance(env, epsilon, q_net, onehot_cache, device):
     # 每轮训练环境与变量初始化
     obs, info, s, done, eval_steps = train_episode_initilize(env)
     # 更新positions记录
@@ -34,7 +33,7 @@ def evaluate_performance(env, epsilon, q_net, n_states, device):
     actions = []
     while not done:
         # 根据神经网络正向推理得到贪婪动作
-        a = epsilon_greedy_dqn(env, epsilon, q_net, state_to_onehot(s, n_states), device) 
+        a = epsilon_greedy_dqn(env, epsilon, q_net, onehot_cache[s], device) 
         # 取得最优状态对应动作
         actions.append(a)            
         # 执行动作获得反馈
@@ -62,6 +61,8 @@ def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
     n_actions = env.action_space.n
     # 初始化训练次数
     episodes = CONFIG["training"]["episodes"]
+    # 日志记录频率
+    log_interval = CONFIG["training"]["log_interval"]
     # 初始化学习率 alpha
     alpha = CONFIG["algorithm"]["alpha"]
     # 初始化折扣因子 gamma，表示未来奖励这算在现在值多少
@@ -103,6 +104,7 @@ def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
     env.set_rewards(rrwds)
     # 全局步数计数器-不重置
     global_step = 0
+    onehot_cache = torch.eye(n_states, device=device)
     # 进入训练，训练次数=episodes
     for ep in range(episodes):
         # 每轮训练初始化观测环境
@@ -113,7 +115,7 @@ def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
         # 开始执行直到抵达终点或任务中断
         while not done:
             # 选择一个动作
-            s_onehot = state_to_onehot(s, n_states)
+            s_onehot = onehot_cache[s]
             a = epsilon_greedy_dqn(env, epsilon, q_net, s_onehot, device) 
             # 执行后得到反馈
             next_obs, reward, terminated, truncated, info = env.step(a)
@@ -130,15 +132,11 @@ def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
                 # 采样数据重构为 当前状态，状态对应动作，奖励，下一状态，完成状态
                 S, A, R, S2, D = zip(*batch)
                 # 转换{当前状态}到神经网络可加载数据形式
-                S_np = np.array([state_to_onehot(s, n_states) for s in S],
-                                 dtype=np.float32
-                                 )
-                S = torch.from_numpy(S_np).to(device)
+                S_idx = torch.tensor(S, dtype=torch.long, device=device)
+                S = onehot_cache[S_idx]
                 # 转换{下一状态}到神经网络可加载数据形式
-                S2_np = np.array([state_to_onehot(s2, n_states) for s2 in S2],
-                                 dtype=np.float32
-                                 )
-                S2 = torch.from_numpy(S2_np).to(device)                
+                S2_idx = torch.tensor(S2, dtype=torch.long, device=device)
+                S2 = onehot_cache[S2_idx]                
                 # 转换{动作}到神经网络可加载数据形式
                 A = torch.tensor(A, dtype=torch.int64, device=device).unsqueeze(1)                
                 # 转换{奖励}到神经网络可加载数据形式
@@ -165,12 +163,13 @@ def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
                 if q_net_learn_count > target_update_freq:
                     target_net.load_state_dict(q_net.state_dict())
                     q_net_learn_count = 0
-                # 按step将TD Error记录tensorBoard
-                td_error = torch.abs(q_sa - y).mean().item()
-                writer.add_scalar("Train/TD_Error", td_error, global_step)
-                writer.add_scalar("Train/Q_mean", q_sa.mean().item(), global_step)
-                writer.add_scalar("Train/Q_max", q_sa.max().item(), global_step)
-                writer.add_scalar("Train/Loss", loss.item(), global_step)
+                if global_step % log_interval == 0:
+                    # 按step将TD Error记录tensorBoard
+                    td_error = torch.abs(q_sa - y).mean().item()
+                    writer.add_scalar("Train/TD_Error", td_error, global_step)
+                    writer.add_scalar("Train/Q_mean", q_sa.mean().item(), global_step)
+                    writer.add_scalar("Train/Q_max", q_sa.max().item(), global_step)
+                    writer.add_scalar("Train/Loss", loss.item(), global_step)
 
             # 状态推进
             s = s_next
@@ -187,7 +186,7 @@ def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
         # 将每轮ep随机率加入tensorBoard
         writer.add_scalar("Episode/Epsilon", epsilon, ep)
         # 评估学习效果，不学习不更新Q表
-        eval_steps, positions, actions, eval_terminated = evaluate_performance(env, epsilon, q_net, n_states, device)
+        eval_steps, positions, actions, eval_terminated = evaluate_performance(env, epsilon, q_net, onehot_cache, device)
         # 将每轮ep学习效果加入tensorBoard
         writer.add_scalar("Eval/Steps", eval_steps, ep)
         writer.add_scalar("Eval/Success", eval_terminated, ep)

@@ -1,6 +1,7 @@
 CONFIG = {
     "training":{
-        "episodes":500  # 训练轮数 
+        "episodes":500,  # 训练轮数 
+        "log_interval":20  # TensorBoard 记录间隔（按 step）
     },
     "algorithm":{
         "alpha" : 0.1,  # 学习率
