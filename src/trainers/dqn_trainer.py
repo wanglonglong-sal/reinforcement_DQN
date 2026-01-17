@@ -24,7 +24,7 @@ def train_episode_initilize(env):
 
     return obs, info, s, done, step_count    
 
-def evaluate_performance(env, q_net, n_states, device):
+def evaluate_performance(env, epsilon, q_net, n_states, device):
     # 每轮训练环境与变量初始化
     obs, info, s, done, eval_steps = train_episode_initilize(env)
     # 更新positions记录
@@ -35,12 +35,7 @@ def evaluate_performance(env, q_net, n_states, device):
     actions = []
     while not done:
         # 根据神经网络正向推理得到贪婪动作
-        with torch.no_grad():
-            x = torch.tensor(
-                state_to_onehot(s, n_states), dtype=torch.float32, device=device
-            ).unsqueeze(0)
-            q_values = q_net(x)
-        a = int(torch.argmax(q_values, dim=1).item())
+        a = epsilon_greedy_dqn(env, epsilon, q_net, state_to_onehot(s, n_states), device) 
         # 取得最优状态对应动作
         actions.append(a)            
         # 执行动作获得反馈
@@ -190,7 +185,7 @@ def train_dqn(env, rctx, q_net, target_net, replay_buffer, optimizer, device):
         # 将每轮ep随机率加入tensorBoard
         writer.add_scalar("Episode/Epsilon", epsilon, ep)
         # 评估学习效果，不学习不更新Q表
-        eval_steps, positions, actions = evaluate_performance(env, q_net, n_states, device)
+        eval_steps, positions, actions = evaluate_performance(env, epsilon, q_net, n_states, device)
         # 将每轮ep学习效果加入tensorBoard
         writer.add_scalar("Eval/Steps", eval_steps, ep)
         # 满足条件触发动画制作
