@@ -5,10 +5,9 @@ import torch.nn.functional as F
 from datetime import datetime
 from pathlib import Path
 from config.Config import CONFIG
-from src.envs.matrix_world import obs_to_state, state_to_onehot
 from src.data.run_context import RunRewards
-from src.agents.policies import epsilon_greedy_dqn, epsilon_greedy_dqn_ran
-from src.ani.animation_visualize import animate_position_2d_img
+from src.agents.policies import epsilon_greedy_dqn_ran
+from src.ani.animation_visualize import animate_position_2d_img_ran
 
 # 以obs转换模型输入数据
 def obs_to_net(obs, env, device):
@@ -202,7 +201,7 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
             run_time = datetime.now().strftime("%Y%m%d%H%M%S")
             ani_path = log_dir / f"{rctx.execute_stem}_{ep}_{run_time}.gif"
             # ani = animate_position_2d(env, positions, actions, ani_path)  # 无定制化动画
-            ani = animate_position_2d_img(env, positions, actions, ani_path, agent_img_dir, des_img_dir, end_img_path, terminated, ending_time) # 定制化动画版本
+            ani = animate_position_2d_img_ran(env, positions, actions, ani_path, agent_img_dir, des_img_dir, end_img_path, terminated, ending_time) # 定制化动画版本
             
     # 关闭tensorBoard文件写入
     writer.close()    
