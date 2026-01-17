@@ -200,12 +200,12 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
             # 将每轮ep学习效果加入tensorBoard
             writer.add_scalar("Eval/Steps", eval_steps, ep)
             writer.add_scalar("Eval/Success", eval_terminated, ep)
-        # 满足条件触发动画制作
-        if save_gif and ep >= save_gif_ep_start and ep % save_gif_ep == 0: 
-            run_time = datetime.now().strftime("%Y%m%d%H%M%S")
-            ani_path = log_dir / f"{rctx.execute_stem}_{ep}_{run_time}.gif"
-            # ani = animate_position_2d(env, positions, actions, ani_path)  # 无定制化动画
-            ani = animate_position_2d_img_ran(env, positions, actions, ani_path, agent_img_dir, des_img_dir, end_img_path, terminated, ending_time) # 定制化动画版本
+            # 满足条件触发动画制作
+            if save_gif and ep >= save_gif_ep_start: 
+                run_time = datetime.now().strftime("%Y%m%d%H%M%S")
+                ani_path = log_dir / f"{rctx.execute_stem}_{ep}_{run_time}.gif"
+                # ani = animate_position_2d(env, positions, actions, ani_path)  # 无定制化动画
+                ani = animate_position_2d_img_ran(env, positions, actions, ani_path, agent_img_dir, des_img_dir, end_img_path, terminated, ending_time) # 定制化动画版本
             
     # 关闭tensorBoard文件写入
     writer.close()    

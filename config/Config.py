@@ -29,7 +29,7 @@ CONFIG = {
     },
     "animation":{
         "save_gif":True,         # 是否保存动画
-        "save_git_ep_start":400, # 保存动画起始轮次
+        "save_git_ep_start":800, # 保存动画起始轮次
         "save_gif_ep":45,       # 保存动画轮次间隔 
         "agent_img_dir":"imgs\\G.gif",  # Agent图片地址
         "des_img_dir":"imgs\\T.gif",    # 终点图片地址    
