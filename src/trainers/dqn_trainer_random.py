@@ -1,4 +1,5 @@
 import torch
+import time
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
@@ -119,6 +120,8 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
     env.set_rewards(rrwds)
     # 全局步数计数器-不重置
     global_step = 0
+    # 全局时间计数器-不重置
+    t0 = time.perf_counter()    
     # 进入训练，训练次数=episodes
     for ep in range(episodes):
         # 每轮训练初始化观测环境
@@ -186,6 +189,14 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
                     writer.add_scalar("Train/Q_mean", q_sa.mean().item(), global_step)
                     writer.add_scalar("Train/Q_max", q_sa.max().item(), global_step)
                     writer.add_scalar("Train/Loss", loss.item(), global_step)
+                    # 训练耗时统计
+                    t1 = time.perf_counter()
+                    dt = t1 - t0
+                    sec_per_stage = dt
+                    sps = train_record_fre / dt if dt > 0 else 0.0
+                    writer.add_scalar("Train/sec_per_stage", sec_per_stage, global_step)
+                    writer.add_scalar("Train/sps", sps, global_step)
+                    t0 = t1                    
 
             # 状态推进
             obs = next_obs

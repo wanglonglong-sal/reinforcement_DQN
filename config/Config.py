@@ -1,8 +1,8 @@
 CONFIG = {
     "training":{
-        "episodes":6000,              # 训练轮数 
+        "episodes":2000,              # 训练轮数 
         "train_record_fre":1000,      # 训练数据记录频次，基于全局步数
-        "eval_performance_fre": 50,  # 表现评估频次，基于ep轮次
+        "eval_performance_fre": 20,  # 表现评估频次，基于ep轮次
     },
     "algorithm":{
         "alpha" : 0.1,   # 学习率
@@ -18,8 +18,8 @@ CONFIG = {
 
     },
     "environment":{
-        "width":15,       # 2D空间宽度 
-        "height":15,      # 2D空间高度
+        "width":12,       # 2D空间宽度 
+        "height":12,      # 2D空间高度
         "min_steps":1,    # 最大步数
         "max_steps":500  # 最大步数
     },
@@ -29,7 +29,7 @@ CONFIG = {
     },
     "animation":{
         "save_gif":True,                # 是否保存动画
-        "save_git_ep_start":5500,        # 保存动画起始轮次
+        "save_git_ep_start":1800,        # 保存动画起始轮次
         "save_gif_ep":45,               # 保存动画轮次间隔 
         "agent_img_dir":"imgs\\G.gif",  # Agent图片地址
         "des_img_dir":"imgs\\T.gif",    # 终点图片地址    
