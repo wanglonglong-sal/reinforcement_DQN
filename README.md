@@ -8,6 +8,7 @@ Install packages
 - pip install -r .\requirements.txt
 
 Install torch, cpu or gpu version
+- cpu: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 - gpu: conda install -y pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
 
 Run python program
