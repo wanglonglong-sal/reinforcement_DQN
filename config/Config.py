@@ -3,6 +3,8 @@ CONFIG = {
         "episodes":2000,              # 训练轮数 
         "train_record_fre":1000,      # 训练数据记录频次，基于全局步数
         "eval_performance_fre": 20,  # 表现评估频次，基于ep轮次
+        "train_mode":0,               # 0: 全新训练模式；1：相同观测环境下继续训练； 2不同观测环境下继续训练
+        "load_resume_file_path":"ckps\\best.pt"  # 在train mode为1或2时，加载的之前参数文件地址
     },
     "algorithm":{
         "alpha" : 0.1,   # 学习率
@@ -18,13 +20,14 @@ CONFIG = {
 
     },
     "environment":{
-        "width":12,       # 2D空间宽度 
-        "height":12,      # 2D空间高度
+        "width":16,       # 2D空间宽度 
+        "height":15,      # 2D空间高度
         "min_steps":1,    # 最大步数
         "max_steps":500  # 最大步数
     },
     "paths":{
         "log_dir":"runs",    # log目录
+        "ckp_dir":"ckps",    # log目录
         "ani_dir":"anis"     # 动画目录 - 未使用
     },
     "animation":{

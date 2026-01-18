@@ -9,6 +9,7 @@ from config.Config import CONFIG
 from src.data.run_context import RunRewards
 from src.agents.policies import epsilon_greedy_dqn_ran
 from src.ani.animation_visualize import animate_position_2d_img_ran
+from src.ckp.ckp_functions import save_dqn_ckpt, load_dqn_ckpt_resume, load_dqn_ckpt_transfer
 
 # 以obs转换模型输入数据
 def obs_to_feature(obs, env):
@@ -75,6 +76,10 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
     train_record_fre = CONFIG["training"]["train_record_fre"]
     # 初始化表现评估频次
     eval_performance_fre = CONFIG["training"]["eval_performance_fre"]
+    # 初始化训练模式
+    train_mode = CONFIG["training"]["train_mode"]
+    # 初始化继续训练参数文件
+    load_resume_file_path = CONFIG["training"]["load_resume_file_path"]
     # 初始化学习率 alpha
     alpha = CONFIG["algorithm"]["alpha"]
     # 初始化折扣因子 gamma，表示未来奖励这算在现在值多少
@@ -94,6 +99,8 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
     run_time = datetime.now().strftime("%Y%m%d%H%M%S")
     log_dir = Path(log_dir) / f"{rctx.execute_stem}_{run_time}"
     writer = SummaryWriter(log_dir)
+    # 训练节点存储路径设置
+    ckp_dir = CONFIG["paths"]["ckp_dir"]
     # 初始化动画相关设定
     save_gif = CONFIG["animation"]["save_gif"]
     save_gif_ep = CONFIG["animation"]["save_gif_ep"]
@@ -122,9 +129,17 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
     global_step = 0
     # 全局时间计数器-不重置
     t0 = time.perf_counter()
+    # 如果训练模式为同一地图继续训练，加载相关参数文件
+    if train_mode == 1:
+        start_episode, epsilon, global_step = load_dqn_ckpt_resume(load_resume_file_path, q_net, target_net, optimizer, device)
+    elif train_mode == 2:
+        load_dqn_ckpt_transfer(load_resume_file_path, q_net, target_net, device)
     # 进入训练，训练次数=episodes
     for ep in range(episodes):
-        # 每轮训练初始化观测环境
+        # 继续训练相关系数恢复
+        if train_mode == 1:
+            ep = start_episode
+        # 每轮训练初始化观测环境    
         print("The episode >>>>>>>>> ", ep)
         obs, info, done, step_count = train_episode_initilize(env)
         # 定义网络学习计数器
@@ -220,6 +235,11 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
             # 将每轮ep学习效果加入tensorBoard
             writer.add_scalar("Eval/Steps", eval_steps, ep)
             writer.add_scalar("Eval/Success", eval_terminated, ep)
+            # 保存训练中间参数节点
+            if ep % (eval_performance_fre * 2) == 0:
+                run_time = datetime.now().strftime("%Y%m%d%H%M%S")
+                ckp_path = Path(ckp_dir) / f"{rctx.execute_stem}_{ep}_{run_time}.pt"
+                save_dqn_ckpt(ckp_path, q_net, target_net, optimizer, ep, epsilon, global_step)
             # 满足条件触发动画制作
             if save_gif and ep >= save_gif_ep_start: 
                 run_time = datetime.now().strftime("%Y%m%d%H%M%S")
