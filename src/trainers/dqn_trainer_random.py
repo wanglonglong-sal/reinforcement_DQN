@@ -106,11 +106,15 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
     step_reward = CONFIG["rewards"]["step_reward"]
     hit_wall_enable = CONFIG["rewards"]["hit_wall_enable"]
     hit_wall_reward = CONFIG["rewards"]["hit_wall_reward"]
+    repeat_position_enable = CONFIG["rewards"]["repeat_position_enable"]
+    repeat_position_reward = CONFIG["rewards"]["repeat_position_reward"]
     rrwds = RunRewards(
         goal_pos_reward = goal_pos_reward,
         step_reward = step_reward,
         hit_wall_enable = hit_wall_enable,
-        hit_wall_reward = hit_wall_reward
+        hit_wall_reward = hit_wall_reward,
+        repeat_position_enable = repeat_position_enable,
+        repeat_position_reward = repeat_position_reward
     )
     env.set_rewards(rrwds)
     # 全局步数计数器-不重置
@@ -127,9 +131,12 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
             # 选择一个动作
             obs_np = obs_to_feature(obs, env)
             a = epsilon_greedy_dqn_ran(env, epsilon, q_net, obs_np, device) 
-            # 执行后得到反馈
+            # 执行动作后得到反馈
             next_obs, reward, terminated, truncated, info = env.step(a)
             next_obs_np = obs_to_feature(next_obs, env)
+            # # 记录上一帧位置
+            # last_x, last_y, last_gx, last_gy = obs
+            # env.last_pos = [last_x, last_y]
             # 是否抵达终点或被打断
             done = terminated or truncated
             # 将本次样本记录到回放样本库

@@ -23,8 +23,10 @@ class MatrixWorld(gym.Env):
         self.start_pos = self.min_pos    
         # 定义世界终点
         self.goal_pos = self.max_pos
-        # 智能体在世界中的位置状态信息
+        # 智能体在世界中当前帧位置信息
         self.pos = self.min_pos
+        # 智能体再世界中上一帧位置信息
+        self.last_pos = self.min_pos
         # 动作空间：两个动作 0:up / 1:down / 2:left / 3:right
         self.action_space = spaces.Discrete(4)
         # 观测空间：采用多重离散方式
@@ -44,6 +46,8 @@ class MatrixWorld(gym.Env):
         super().reset(seed=seed)
         # 一局开始：把智能体放回起点
         self.pos = self.start_pos.copy()
+        # 初始化智能体上一帧位置信息
+        self.last_pos = tuple(self.start_pos.copy())
         # 随机设定终点位置
         while True:
             gx = self.np_random.integers(self.min_x, self.max_x + 1)
@@ -63,8 +67,7 @@ class MatrixWorld(gym.Env):
     def step(self, action): #0:up / 1:down / 2:left / 3:right
         # 取出 x, y 现有坐标
         x, y = self.pos
-        old_x = x
-        old_y = y
+        before_act_pos = (x ,y)
         # 如果向上，y + 1
         if (action == 0):
             y += 1
@@ -83,20 +86,30 @@ class MatrixWorld(gym.Env):
         x = int(np.clip(x, self.min_x, self.max_x))
         # 最新坐标位置传回
         self.pos = [x, y]
+        after_act_pos = (x, y)
         # 撞墙判断
         hit_wall = False
-        if x == old_x and y == old_y:
+        if after_act_pos == before_act_pos:
             hit_wall = True
+        # 横跳判断
+        repeat_move = False
+        if after_act_pos == self.last_pos:
+            repeat_move = True
         # 抵达终点时标记任务结束，最大化奖励
         if self.pos == self.goal_pos:
             reward = self.rrwds.goal_pos_reward
             terminated = True
         # 未抵达中间时标记任务继续，惩罚    
         else:
+            # 移动常规惩罚
             reward = self.rrwds.step_reward
             terminated = False
+            # 特殊惩罚 - 撞墙惩罚
             if hit_wall and self.rrwds.hit_wall_enable:
                 reward += self.rrwds.hit_wall_reward
+            # 特殊惩罚 - 横跳惩罚
+            if repeat_move and self.rrwds.repeat_position_enable:
+                reward += self.rrwds.repeat_position_reward
         # 将位置信息转换到观测空间
         obs = np.concatenate([self.pos, self.goal_pos]).astype(np.int64)
         # 当步数远超预期时，中断训练
@@ -106,6 +119,8 @@ class MatrixWorld(gym.Env):
         else:
             truncated = False 
         info = {}
+        # 更新上一帧位置
+        self.last_pos = after_act_pos
 
         return obs, reward, terminated, truncated, info   
     
