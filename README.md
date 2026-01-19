@@ -32,3 +32,7 @@ Run tensorBoard
 Supervise gpu performance
 - nvidia-smi -l 1
 
+Comments:
+-----------------------------------------------------------------------------------------------------
+The animation results saved at runs/xxx_log/xxxx.gif
+
