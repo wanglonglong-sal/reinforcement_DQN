@@ -27,7 +27,7 @@ Run python program
 
 Run tensorBoard
 - tensorboard --logdir runs
-- http:127.0.0.1:10060
+- http://localhost:6006/
 
 Supervise gpu performance
 - nvidia-smi -l 1
