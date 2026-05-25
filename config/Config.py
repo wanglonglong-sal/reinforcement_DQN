@@ -1,11 +1,11 @@
 CONFIG = {
     "training":{
-        "episodes":2000,              # 训练轮数 
+        "episodes":500,              # 训练轮数 
         "train_record_fre":1000,      # 训练数据记录频次，基于全局步数
         "eval_performance_fre": 20,  # 表现评估频次，基于ep轮次
         "train_mode":2,               # 0: 全新训练模式；1：相同观测环境下继续训练； 2不同观测环境下继续训练
         "load_resume_file_path":"ckps\\best_1615.pt",  # 在train mode为1或2时，加载的之前参数文件地址
-        "pt_save_enabled":False       # 是否启动参数文件保存功能
+        "pt_save_enabled":True       # 是否启动参数文件保存功能
     },
     "algorithm":{
         "alpha" : 0.1,   # 学习率
@@ -21,8 +21,8 @@ CONFIG = {
 
     },
     "environment":{
-        "width":20,       # 2D空间宽度 
-        "height":20,      # 2D空间高度
+        "width":22,       # 2D空间宽度 
+        "height":22,      # 2D空间高度
         "min_steps":1,    # 最大步数
         "max_steps":500  # 最大步数
     },
@@ -33,7 +33,7 @@ CONFIG = {
     },
     "animation":{
         "save_gif":True,                # 是否保存动画
-        "save_git_ep_start":1800,        # 保存动画起始轮次
+        "save_git_ep_start":400,        # 保存动画起始轮次
         "save_gif_ep":45,               # 保存动画轮次间隔 
         "agent_img_dir":"imgs\\G.gif",  # Agent图片地址
         "des_img_dir":"imgs\\T.gif",    # 终点图片地址    
