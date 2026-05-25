@@ -1,5 +1,7 @@
 # DQN Grid World 强化学习 Demo
 
+[English Version](README_EN.md)
+
 一个基于 PyTorch 与 Gymnasium 的 2D Grid World 强化学习 Demo，用于观察智能体在离散环境中的状态转移、奖励反馈、探索策略和路径学习过程。项目实现了 DQN、随机目标点导航、经验回放、目标网络、Double DQN、TensorBoard 训练记录和 GIF 路径可视化。
 
 ## 演示与结果
@@ -8,16 +10,16 @@
 
 | 演示 | 预览 | 内容 |
 | --- | --- | --- |
-| Double DQN rollout 440 | [GIF](runs/2Dworld_DQN_ran_dual_20260525141746/2Dworld_DQN_ran_dual_440_20260525141822.gif) | 第 440 轮附近的路径评估结果 |
-| Double DQN rollout 480 | [GIF](runs/2Dworld_DQN_ran_dual_20260525141746/2Dworld_DQN_ran_dual_480_20260525141829.gif) | 第 480 轮附近的路径评估结果 |
+| Double DQN rollout 420 | [GIF](imgs/2Dworld_DQN_ran_dual_420_20260525141818.gif) | 第 420 轮附近的路径评估结果 |
+| Double DQN rollout 480 | [GIF](imgs/2Dworld_DQN_ran_dual_480_20260525141829.gif) | 第 480 轮附近的路径评估结果 |
 
 ### Double DQN Rollout
 
-![Double DQN rollout 440](runs/2Dworld_DQN_ran_dual_20260525141746/2Dworld_DQN_ran_dual_440_20260525141822.gif)
+![Double DQN rollout 420](imgs/2Dworld_DQN_ran_dual_420_20260525141818.gif)
 
 该演示使用随机目标点环境。每个 episode 中，环境会生成一个目标点，智能体根据当前位置、目标位置和相对距离特征选择动作。
 
-![Double DQN rollout 480](runs/2Dworld_DQN_ran_dual_20260525141746/2Dworld_DQN_ran_dual_480_20260525141829.gif)
+![Double DQN rollout 480](imgs/2Dworld_DQN_ran_dual_480_20260525141829.gif)
 
 ## 功能特性
 
