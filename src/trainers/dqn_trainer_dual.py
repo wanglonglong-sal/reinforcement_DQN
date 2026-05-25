@@ -80,6 +80,7 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
     train_mode = CONFIG["training"]["train_mode"]
     # 初始化继续训练参数文件
     load_resume_file_path = CONFIG["training"]["load_resume_file_path"]
+    pt_save_enabled = CONFIG["training"]["pt_save_enabled"]
     # 初始化学习率 alpha
     alpha = CONFIG["algorithm"]["alpha"]
     # 初始化折扣因子 gamma，表示未来奖励这算在现在值多少
@@ -236,7 +237,7 @@ def train_dqn_ran(env, rctx, q_net, target_net, replay_buffer, optimizer, device
             writer.add_scalar("Eval/Steps", eval_steps, ep)
             writer.add_scalar("Eval/Success", eval_terminated, ep)
             # 保存训练中间参数节点
-            if ep % (eval_performance_fre * 2) == 0:
+            if pt_save_enabled and ep % (eval_performance_fre * 2) == 0:
                 run_time = datetime.now().strftime("%Y%m%d%H%M%S")
                 ckp_path = Path(ckp_dir) / f"{rctx.execute_stem}_{ep}_{run_time}.pt"
                 save_dqn_ckpt(ckp_path, q_net, target_net, optimizer, ep, epsilon, global_step)
